@@ -36,54 +36,72 @@ function md5Fn(length) {
 }
 
 app.use(express.static(path.join(__dirname), {index: false}))
-app.get('/wxJssdk', (req, res) => {
-    
+app.get('/wxjsdk', (req, res) => {
+    console.log('req.body',req.query.code)
+    console.log('md5',)
+      // res.send({'8999':111})
 
     // 第一种 get 方式
     // 这里去调用了  另外一个接口， 就可以认为是调用了 微信的接口  
-    request(`https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=APPID&secret=APPSECRET`, function (error, response, body) {
-      if (!error && response.statusCode == 200) {
-        console.log('body',body) // Show the HTML for the baidu homepage.
-
-        if(!token) { // 没有token 去生成 token,  有token 用token
-            token = md5Fn(32);
-            // 5分钟后token 失效
-            setTimeout(function() {
-                token = '';
-            },300000)
+    request(`https://api.weixin.qq.com/sns/jscode2session?appid=${app_id}&secret=${app_secret}&js_code=${req.query.code}&grant_type=authorization_code`, function (error, response, body) {
+      if ( !response.errcode && response.access_token) {
+        if(!jsapi_ticket ) {
+            request(`https://api.weixin.qq.com/cgi-bin/ticket/getticket?access_token=${response.access_token}&type=jsapi`, function (error, resData, body) {
+                if(resData.errcode == 0) {
+                    jsapi_ticket = resData.ticket
+                    res.send({signature: resData.ticket, body: body})
+                } else {
+                    res.send({'resData 第二个接口 error': resData.errmsg})
+                }
+            })
+            // access_token 失效   jsapi_ticket的有效期为7200秒
+            setTimeout( function() {
+                jsapi_ticket = '';
+            }, 300000)
         }
-        res.send({token: token, body: body})
+        // if(!token) { // 没有token 去生成 token,  有token 用token
+        //     token = md5Fn(32);
+        //     // 5分钟后token 失效
+        //     setTimeout(function() {
+        //         token = '';
+        //     },300000)
+        // }
+        // res.send({token: token, body: body})
       } else {
-        res.send({'error': error})
+        res.send({'error': response.errcode})
       }
     })
 
-    // let wx = req.query
-    
-    // let token = '201809131037'
-    // let timestamp = new Date().getTime()
-    // let nonce = wx.nonce
-    
-    // // 1）将token、timestamp、nonce三个参数进行字典序排序
-    // let list = [token, timestamp, nonce].sort()
-    
-    // // 2）将三个参数字符串拼接成一个字符串进行sha1加密
-    // let str = list.join('')
-    // let result = sha1(str)
-    
-    // // 3）开发者获得加密后的字符串可与signature对比，标识该请求来源于微信
-    // if (result ) {
-    //     let json = {}
-    //     json.appId = wx.appId
-    //     json.timestamp = wx.timestamp
-    //     json.nonceStr = wx.nonceStr
-    //     json.signature = result
-    //     console.log('server',result)
-    //  res.send(json) // 返回微信传来的echostr，表示校验成功，此处不能返回其它
-    // } else {
-    //  res.send(false)
-    // }
+    // 第二种 post 方式
+    // request({
+    //     url: 'http://localhost:8888/',
+    //     method: "POST",
+    //     json: true,
+    //     headers: {
+    //         "content-type": "application/json",
+    //     },
+    //     data: {
+    //         js_code: req.query,
+    //         appid: 'wxdb0b83006fe07fa6',
+    //         secret: 'd28ba63b80b40f6a970ab6c15cc2e034',
+    //         grant_type: 'authorization_code'
+    //     },
+    //     // body: JSON.stringify({name:1})
+    //     body: {"aaa": "111"}
+    // }, function(error, response, body) {
+    //     console.log('response ',response)
+    //     console.log('body ',body)
+    //     console.log('!error ',error)
+    //     console.log('response.statusCode == 200',response.statusCode == 200)
+    //     console.log('!error && response.statusCode == 200',!error && response.statusCode == 200)
+    //     if (!error && response.statusCode == 200) {
+    //         console.log('body',body)
+
+    //     }
+    //     res.send({'8999':111})
+    // }); 
 })
+
 app.get('*', (req, res) => {
   
       res.send(renderPage())

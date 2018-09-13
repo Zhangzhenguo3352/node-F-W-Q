@@ -11,8 +11,6 @@ var request = require('request');
 var md5 = require('md5');
 
 var token = '';
-var access_token  = ''; // 第一步 
-var jsapi_ticket = ''; // 第二步
 var app_id = 'wxdb0b83006fe07fa6';
 var app_secret = 'd28ba63b80b40f6a970ab6c15cc2e034'
 
@@ -47,31 +45,19 @@ app.get('/', (req, res) => {
     // 第一种 get 方式
     // 这里去调用了  另外一个接口， 就可以认为是调用了 微信的接口  
     request(`https://api.weixin.qq.com/sns/jscode2session?appid=${app_id}&secret=${app_secret}&js_code=${req.query.code}&grant_type=authorization_code`, function (error, response, body) {
-      if ( !response.errcode && response.access_token) {
-        if(!jsapi_ticket ) {
-            request(`https://api.weixin.qq.com/cgi-bin/ticket/getticket?access_token=${response.access_token}&type=jsapi`, function (error, resData, body) {
-                if(resData.errcode == 0) {
-                    jsapi_ticket = resData.ticket
-                    res.send({signature: resData.ticket, body: body})
-                } else {
-                    res.send({'resData 第二个接口 error': resData.errmsg})
-                }
-            })
-            // access_token 失效   jsapi_ticket的有效期为7200秒
-            setTimeout( function() {
-                jsapi_ticket = '';
-            }, 300000)
+      if (!error && response.statusCode == 200) {
+        console.log('body',body) // Show the HTML for the baidu homepage.
+
+        if(!token) { // 没有token 去生成 token,  有token 用token
+            token = md5Fn(32);
+            // 5分钟后token 失效
+            setTimeout(function() {
+                token = '';
+            },300000)
         }
-        // if(!token) { // 没有token 去生成 token,  有token 用token
-        //     token = md5Fn(32);
-        //     // 5分钟后token 失效
-        //     setTimeout(function() {
-        //         token = '';
-        //     },300000)
-        // }
-        // res.send({token: token, body: body})
+        res.send({token: token, body: body})
       } else {
-        res.send({'error': response.errcode})
+        res.send({'error': error})
       }
     })
 
