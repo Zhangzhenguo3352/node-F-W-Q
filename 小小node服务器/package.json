@@ -1,0 +1,22 @@
+{
+  "name": "node-all",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.15.3",
+    "md5": "^2.2.1",
+    "request": "^2.88.0",
+    "sha1": "^1.1.1"
+  },
+  "devDependencies": {
+    "body-parser": "^1.17.2",
+    "compression": "^1.6.2"
+  }
+}
